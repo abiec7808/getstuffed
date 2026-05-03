@@ -56,7 +56,7 @@ export async function GET(request: Request) {
   const pdfBytes = await generateInvoicePDF(document, document.customer, profile)
 
   // Wrap the bytes in a Blob so TypeScript accepts it as BodyInit
-  const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' })
+  const pdfBlob = new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' })
 
   return new NextResponse(pdfBlob, {
     headers: {
