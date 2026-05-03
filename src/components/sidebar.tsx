@@ -86,7 +86,8 @@ export function Sidebar() {
                 <span className="flex-1">{item.name}</span>
                 {isActive && <ChevronRight className="w-4 h-4 opacity-70" />}
               </Link>
-            })}
+            )
+          })}
         </nav>
 
         {isAdmin && (
