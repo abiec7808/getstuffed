@@ -162,7 +162,6 @@ export function InvoiceForm({
       })) || [{ description: "", quantity: 1, unit_price: 0, total: 0 }],
       tax_rate: initialData?.tax_rate ?? defaultTaxRate ?? 15,
       discount: initialData?.discount || 0,
-      notes: initialData?.notes || "",
     },
   })
 
@@ -389,6 +388,7 @@ export function InvoiceForm({
                                   description: product.description,
                                   quantity: 1,
                                   unit_price: product.default_unit_price,
+                                  total: product.default_unit_price,
                                 })
                                 setProductSearch('')
                                 setIsProductDialogOpen(false)
@@ -475,7 +475,7 @@ export function InvoiceForm({
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => append({ description: "", quantity: 1, unit_price: 0 })}
+                          onClick={() => append({ description: "", quantity: 1, unit_price: 0, total: 0 })}
                           className="rounded-xl font-bold border-2 hover:bg-primary/5 hover:text-primary transition-all"
                         >
                           <Plus className="w-4 h-4 mr-2" />

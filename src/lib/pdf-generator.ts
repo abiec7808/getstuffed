@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib'
 import { Customer, Profile } from './types'
 import { format } from 'date-fns'
 
@@ -338,7 +338,7 @@ export async function generateInvoicePDF(data: any, customer: Customer, profile:
       font: fontBold,
       color: rgb(0.2, 0.6, 0.2),
       opacity: 0.15,
-      rotate: { type: 'degrees', angle: 30 },
+      rotate: degrees(30),
     })
   }
 
