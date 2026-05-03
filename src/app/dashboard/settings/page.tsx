@@ -264,7 +264,7 @@ export default function SettingsPage() {
                     <img src={profile.logo_url} alt="Logo" className="w-full h-full object-contain p-4" />
                   ) : (
                     <div className="text-center p-4">
-                      <Upload className="w-8 h-8 text-primary/50 mx-auto mb-2 group-hover:text-primary transition-colors" />
+                      <img src="/logo.png" alt="Default Logo" className="w-16 h-16 object-contain mx-auto mb-2 opacity-20 group-hover:opacity-100 transition-opacity" />
                       <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Upload Logo</p>
                     </div>
                   )}

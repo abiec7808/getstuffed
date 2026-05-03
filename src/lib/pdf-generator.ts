@@ -11,8 +11,9 @@ export async function generateInvoicePDF(invoice: any, customer: Customer, profi
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
   // Colors
-  const primaryColor = rgb(0.94, 0.29, 0.14) // #F04A23
-  const secondaryColor = rgb(0.2, 0.2, 0.2) // Charcoal
+  const primaryColor = rgb(1, 0.30, 0.24) // #FF4D3D (Vibrant Red)
+  const secondaryColor = rgb(0.82, 0.60, 0.36) // #D29A5C (Tan)
+  const textColor = rgb(0.29, 0.22, 0.16) // #4A3728 (Dark Brown)
 
   // Header
   page.drawRectangle({
@@ -20,7 +21,7 @@ export async function generateInvoicePDF(invoice: any, customer: Customer, profi
     y: height - 100,
     width: width,
     height: 100,
-    color: primaryColor,
+    color: secondaryColor,
   })
 
   page.drawText('INVOICE', {
@@ -46,7 +47,7 @@ export async function generateInvoicePDF(invoice: any, customer: Customer, profi
     y: currentY,
     size: 14,
     font: fontBold,
-    color: secondaryColor,
+    color: textColor,
   })
   currentY -= 20
   page.drawText(profile.business_address || '', {
@@ -148,7 +149,7 @@ export async function generateInvoicePDF(invoice: any, customer: Customer, profi
   currentY -= 40
   const totalsX = width - 200
   page.drawText('Subtotal:', { x: totalsX, y: currentY, size: 10, font: font })
-  page.drawText(`R ${invoice.subtotal.toFixed(2)}`, { x: width - 90, y: currentY, size: 10, font: font, color: secondaryColor })
+  page.drawText(`R ${invoice.subtotal.toFixed(2)}`, { x: width - 90, y: currentY, size: 10, font: font, color: textColor })
   
   currentY -= 20
   page.drawText(`Tax (${invoice.tax / invoice.subtotal * 100 || 0}%):`, { x: totalsX, y: currentY, size: 10, font: font })

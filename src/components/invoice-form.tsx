@@ -306,10 +306,14 @@ export function InvoiceForm({ type, customers, initialData, onSubmit, isSubmitti
           {/* Right Column: Summary & Actions */}
           <div className="space-y-8">
             <Card className="border-2 shadow-xl rounded-3xl overflow-hidden sticky top-8">
-              <CardHeader className="bg-primary text-white">
-                <CardTitle className="text-xl font-black flex items-center gap-2">
-                  <Calculator className="w-5 h-5" />
-                  Summary
+              <CardHeader className="bg-primary text-white relative overflow-hidden">
+                <div className="absolute right-0 top-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8 blur-2xl" />
+                <CardTitle className="text-xl font-black flex items-center justify-between gap-2 relative z-10">
+                  <div className="flex items-center gap-2">
+                    <Calculator className="w-5 h-5" />
+                    Summary
+                  </div>
+                  <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain brightness-0 invert" />
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-8 space-y-6">

@@ -39,8 +39,15 @@ export function AuthForm({ type }: { type: 'login' | 'signup' }) {
             emailRedirectTo: `${location.origin}/auth/callback`,
           },
         })
-        if (error) throw error
-        toast.success('Signup successful! Please check your email for verification.')
+        if (error) {
+          if (error.message.includes('User already registered')) {
+            toast.error('This email is already registered. Please try logging in.')
+          } else {
+            throw error
+          }
+        } else {
+          toast.success('Signup successful! Please check your email to verify your account.')
+        }
       }
     } catch (error: any) {
       toast.error(error.message || 'An error occurred during authentication')
@@ -53,10 +60,11 @@ export function AuthForm({ type }: { type: 'login' | 'signup' }) {
     <Card className="w-full max-w-md border-2 shadow-xl rounded-2xl overflow-hidden">
       <CardHeader className="space-y-1 text-center bg-primary/5 pb-8 pt-10">
         <div className="flex justify-center mb-4">
-          {/* Logo Placeholder - Will be replaced by actual logo in page */}
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg transform rotate-3">
-            GS
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="GetStuffed Logo" 
+            className="w-24 h-24 object-contain shadow-lg rounded-full border-4 border-white"
+          />
         </div>
         <CardTitle className="text-3xl font-extrabold tracking-tight text-primary">
           {type === 'login' ? 'Welcome Back' : 'Create Account'}
