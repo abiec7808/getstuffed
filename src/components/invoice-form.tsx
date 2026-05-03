@@ -23,15 +23,23 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select'
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table'
 import { Plus, Trash2, Save, Send, Loader2, Calculator } from 'lucide-react'
 import { Customer } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 const itemSchema = z.object({
   description: z.string().min(1, "Description is required"),
-  quantity: z.coerce.number().min(1, "Min 1"),
-  unit_price: z.coerce.number().min(0, "Min 0"),
-  total: z.coerce.number(),
+  quantity: z.number().min(1, "Min 1"),
+  unit_price: z.number().min(0, "Min 0"),
+  total: z.number(),
 })
 
 const invoiceSchema = z.object({
@@ -39,8 +47,8 @@ const invoiceSchema = z.object({
   invoice_number: z.string().min(1, "Number is required"),
   due_date: z.string().optional(),
   items: z.array(itemSchema).min(1, "At least one item is required"),
-  tax_rate: z.coerce.number().default(15),
-  discount: z.coerce.number().default(0),
+  tax_rate: z.number(),
+  discount: z.number(),
   notes: z.string().optional(),
 })
 
@@ -216,7 +224,7 @@ export function InvoiceForm({ type, customers, initialData, onSubmit, isSubmitti
                                     {...field} 
                                     className="rounded-xl border-2" 
                                     onChange={(e) => {
-                                      field.onChange(e)
+                                      field.onChange(parseFloat(e.target.value) || 0)
                                       handleItemChange(index)
                                     }}
                                   />
@@ -238,7 +246,7 @@ export function InvoiceForm({ type, customers, initialData, onSubmit, isSubmitti
                                     {...field} 
                                     className="rounded-xl border-2" 
                                     onChange={(e) => {
-                                      field.onChange(e)
+                                      field.onChange(parseFloat(e.target.value) || 0)
                                       handleItemChange(index)
                                     }}
                                   />
@@ -319,7 +327,12 @@ export function InvoiceForm({ type, customers, initialData, onSubmit, isSubmitti
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input type="number" {...field} className="rounded-xl border-2" />
+                            <Input 
+                              type="number" 
+                              {...field} 
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              className="rounded-xl border-2" 
+                            />
                           </FormControl>
                         </FormItem>
                       )}
@@ -338,7 +351,12 @@ export function InvoiceForm({ type, customers, initialData, onSubmit, isSubmitti
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input type="number" {...field} className="rounded-xl border-2" />
+                            <Input 
+                              type="number" 
+                              {...field} 
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              className="rounded-xl border-2" 
+                            />
                           </FormControl>
                         </FormItem>
                       )}
