@@ -13,6 +13,7 @@ import { Loader2 } from 'lucide-react'
 export function AuthForm({ type }: { type: 'login' | 'signup' }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [username, setUsername] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
@@ -37,6 +38,9 @@ export function AuthForm({ type }: { type: 'login' | 'signup' }) {
           password,
           options: {
             emailRedirectTo: `${location.origin}/auth/callback`,
+            data: {
+              username: username || (email === 'admin@getstuffed.co.za' ? 'Admin' : 'User')
+            }
           },
         })
         if (error) {
@@ -77,6 +81,20 @@ export function AuthForm({ type }: { type: 'login' | 'signup' }) {
       </CardHeader>
       <form onSubmit={handleAuth}>
         <CardContent className="grid gap-6 py-8">
+          {type === 'signup' && (
+            <div className="grid gap-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="Admin"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required={type === 'signup'}
+                className="rounded-xl border-2 focus-visible:ring-primary"
+              />
+            </div>
+          )}
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input

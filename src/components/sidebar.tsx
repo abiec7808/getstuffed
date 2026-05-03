@@ -10,8 +10,10 @@ import {
   ClipboardList, 
   Settings, 
   LogOut,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck
 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -28,6 +30,18 @@ export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+
+  const { data: profile } = useQuery({
+    queryKey: ['profile-sidebar'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return null
+      const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      return data
+    }
+  })
+
+  const isAdmin = profile?.role === 'admin'
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut()
@@ -72,9 +86,26 @@ export function Sidebar() {
                 <span className="flex-1">{item.name}</span>
                 {isActive && <ChevronRight className="w-4 h-4 opacity-70" />}
               </Link>
-            )
-          })}
+            })}
         </nav>
+
+        {isAdmin && (
+          <div className="mt-8">
+            <p className="px-4 mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Admin</p>
+            <Link
+              href="/dashboard/admin/users"
+              className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all group",
+                pathname.startsWith('/dashboard/admin') 
+                  ? "bg-secondary text-white shadow-md shadow-secondary/20 scale-[1.02]" 
+                  : "text-muted-foreground hover:bg-secondary/5 hover:text-secondary"
+              )}
+            >
+              <ShieldCheck className={cn("w-5 h-5", pathname.startsWith('/dashboard/admin') ? "text-white" : "text-muted-foreground group-hover:text-secondary")} />
+              <span className="flex-1">Users</span>
+            </Link>
+          </div>
+        )}
       </div>
 
       <div className="mt-auto p-6 border-t border-border/50">

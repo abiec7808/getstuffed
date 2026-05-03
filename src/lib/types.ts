@@ -7,6 +7,8 @@ export type Profile = {
   logo_url: string | null
   default_tax_rate: number
   invoice_prefix: string
+  role: 'user' | 'admin'
+  username: string | null
   updated_at: string
 }
 
