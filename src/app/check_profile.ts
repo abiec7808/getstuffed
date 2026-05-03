@@ -1,4 +1,4 @@
-import { createClient } from './lib/supabase'
+import { createClient } from '../lib/supabase'
 
 async function check() {
   const supabase = createClient()
