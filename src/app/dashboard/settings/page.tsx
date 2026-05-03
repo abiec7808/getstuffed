@@ -24,9 +24,9 @@ import { Loader2, Building2, Mail, Phone, MapPin, Globe, Upload } from 'lucide-r
 const settingsSchema = z.object({
   business_name: z.string().min(2, "Name is required"),
   business_address: z.string().optional(),
-  business_email: z.string().email("Invalid email").optional().or(z.literal("")),
+  business_email: z.string().email("Invalid email").or(z.literal("")).optional(),
   business_phone: z.string().optional(),
-  default_tax_rate: z.coerce.number().min(0).max(100),
+  default_tax_rate: z.number().min(0).max(100),
   invoice_prefix: z.string().min(1),
 })
 
@@ -208,7 +208,12 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel className="font-bold text-foreground">Default Tax Rate (%)</FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} className="rounded-xl border-2 h-11" />
+                          <Input 
+                            type="number" 
+                            {...field} 
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            className="rounded-xl border-2 h-11" 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
