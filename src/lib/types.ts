@@ -7,9 +7,23 @@ export type Profile = {
   logo_url: string | null
   default_tax_rate: number
   invoice_prefix: string
+  estimate_prefix: string
   role: 'user' | 'admin'
   username: string | null
+  bank_name: string | null
+  account_holder: string | null
+  account_number: string | null
+  branch_code: string | null
+  notes: string | null
   updated_at: string
+}
+
+export type Product = {
+  id: string
+  user_id: string
+  description: string
+  default_unit_price: number
+  created_at: string
 }
 
 export type Customer = {
@@ -62,6 +76,7 @@ export type Invoice = {
   tax: number
   discount: number
   total: number
+  notes: string | null
   due_date: string | null
   created_at: string
   customer?: Customer

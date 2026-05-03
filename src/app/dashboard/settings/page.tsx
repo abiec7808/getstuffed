@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -19,7 +20,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { toast } from 'sonner'
 import { Profile } from '@/lib/types'
-import { Loader2, Building2, Mail, Phone, MapPin, Globe, Upload } from 'lucide-react'
+import { Loader2, Building2, Mail, Phone, MapPin, Globe, Upload, Landmark } from 'lucide-react'
 
 const settingsSchema = z.object({
   business_name: z.string().min(2, "Name is required"),
@@ -28,6 +29,12 @@ const settingsSchema = z.object({
   business_phone: z.string().optional(),
   default_tax_rate: z.number().min(0).max(100),
   invoice_prefix: z.string().min(1),
+  estimate_prefix: z.string().min(1),
+  bank_name: z.string().optional(),
+  account_holder: z.string().optional(),
+  account_number: z.string().optional(),
+  branch_code: z.string().optional(),
+  notes: z.string().optional(),
 })
 
 type SettingsFormValues = z.infer<typeof settingsSchema>
@@ -62,6 +69,12 @@ export default function SettingsPage() {
       business_phone: profile.business_phone || "",
       default_tax_rate: profile.default_tax_rate,
       invoice_prefix: profile.invoice_prefix,
+      estimate_prefix: profile.estimate_prefix,
+      bank_name: profile.bank_name || "",
+      account_holder: profile.account_holder || "",
+      account_number: profile.account_number || "",
+      branch_code: profile.branch_code || "",
+      notes: profile.notes || "",
     } : {
       business_name: "",
       business_address: "",
@@ -69,6 +82,12 @@ export default function SettingsPage() {
       business_phone: "",
       default_tax_rate: 15,
       invoice_prefix: "INV-",
+      estimate_prefix: "EST-GTS",
+      bank_name: "",
+      account_holder: "",
+      account_number: "",
+      branch_code: "",
+      notes: "",
     }
   })
 
@@ -92,6 +111,48 @@ export default function SettingsPage() {
       toast.error(error.message || 'Error updating settings')
     }
   })
+
+  const [isUploading, setIsUploading] = React.useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  const uploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      setIsUploading(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error("No user found")
+
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}-${Math.random()}.${fileExt}`
+      const filePath = `logos/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('public')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('public')
+        .getPublicUrl(filePath)
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ logo_url: publicUrl })
+        .eq('id', user.id)
+
+      if (updateError) throw updateError
+
+      queryClient.invalidateQueries({ queryKey: ['profile'] })
+      toast.success('Logo updated successfully')
+    } catch (error: any) {
+      toast.error(error.message || 'Error uploading logo')
+    } finally {
+      setIsUploading(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -233,18 +294,120 @@ export default function SettingsPage() {
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={form.control}
+                    name="estimate_prefix"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-bold text-foreground">Estimate Prefix</FormLabel>
+                        <FormControl>
+                          <Input {...field} className="rounded-xl border-2 h-11" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem className="col-span-2">
+                        <FormLabel className="font-bold text-foreground">Default Terms & Notes</FormLabel>
+                        <FormControl>
+                          <textarea 
+                            {...field} 
+                            placeholder="e.g. Please use the estimate number as reference..."
+                            className="w-full min-h-[100px] rounded-xl border-2 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 bg-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </CardContent>
-                <div className="p-8 bg-muted/30 border-t flex justify-end">
-                  <Button 
-                    type="submit" 
-                    className="rounded-xl h-11 px-8 font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
-                    disabled={updateMutation.isPending}
-                  >
-                    {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save Changes
-                  </Button>
-                </div>
               </Card>
+
+              <Card className="border-2 shadow-sm rounded-3xl overflow-hidden">
+                <CardHeader className="bg-primary/5 border-b">
+                  <CardTitle className="text-xl font-black text-primary flex items-center gap-2">
+                    <Landmark className="w-5 h-5" />
+                    Banking Information
+                  </CardTitle>
+                  <CardDescription className="font-medium text-muted-foreground">
+                    This will be displayed on your invoices for payments.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="bank_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-bold text-foreground">Bank Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} className="rounded-xl border-2 h-11" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="account_holder"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-bold text-foreground">Account Holder</FormLabel>
+                        <FormControl>
+                          <Input {...field} className="rounded-xl border-2 h-11" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="account_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-bold text-foreground">Account Number</FormLabel>
+                        <FormControl>
+                          <Input {...field} className="rounded-xl border-2 h-11" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="branch_code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-bold text-foreground">Branch Code</FormLabel>
+                        <FormControl>
+                          <Input {...field} className="rounded-xl border-2 h-11" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-end pt-4">
+                <Button 
+                  type="submit" 
+                  className="rounded-xl h-12 px-10 font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform text-lg"
+                  disabled={updateMutation.isPending}
+                >
+                  {updateMutation.isPending && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                  Save All Changes
+                </Button>
+              </div>
             </form>
           </Form>
         </div>
@@ -259,7 +422,22 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="p-8">
               <div className="flex flex-col items-center gap-6">
-                <div className="w-40 h-40 bg-white border-2 border-dashed border-primary/30 rounded-3xl flex items-center justify-center overflow-hidden group hover:border-primary transition-colors cursor-pointer relative">
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*"
+                  onChange={uploadLogo}
+                />
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-40 h-40 bg-white border-2 border-dashed border-primary/30 rounded-3xl flex items-center justify-center overflow-hidden group hover:border-primary transition-colors cursor-pointer relative"
+                >
+                  {isUploading && (
+                    <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
+                  )}
                   {profile?.logo_url ? (
                     <img src={profile.logo_url} alt="Logo" className="w-full h-full object-contain p-4" />
                   ) : (
@@ -273,8 +451,13 @@ export default function SettingsPage() {
                   Recommended size: 400x400px. <br />
                   Supports PNG, JPG or SVG.
                 </p>
-                <Button variant="outline" className="rounded-xl font-bold w-full h-11 border-2">
-                  Change Logo
+                <Button 
+                  variant="outline" 
+                  className="rounded-xl font-bold w-full h-11 border-2"
+                  disabled={isUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {isUploading ? "Uploading..." : "Change Logo"}
                 </Button>
               </div>
             </CardContent>
@@ -284,3 +467,4 @@ export default function SettingsPage() {
     </div>
   )
 }
+

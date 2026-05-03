@@ -26,7 +26,9 @@ import {
   Filter,
   CheckCircle2,
   Clock,
-  Send
+  Send,
+  Pencil,
+  Mail
 } from 'lucide-react'
 import { 
   DropdownMenu, 
@@ -111,6 +113,31 @@ export default function EstimatesPage() {
     },
     onError: (error: any) => {
       toast.error(error.message || 'Error converting estimate')
+    }
+  })
+
+  const sendEmailMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch('/api/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, type: 'estimate' })
+      })
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to send email')
+      }
+      return response.json()
+    },
+    onMutate: () => {
+      toast.loading('Sending email...', { id: 'send-email' })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['estimates'] })
+      toast.success('Email sent successfully', { id: 'send-email' })
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Error sending email', { id: 'send-email' })
     }
   })
 
@@ -234,6 +261,17 @@ export default function EstimatesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl border-2">
+                          <Link href={`/dashboard/estimates/edit/${estimate.id}`}>
+                            <DropdownMenuItem className="font-semibold cursor-pointer">
+                              <Pencil className="w-4 h-4 mr-2" /> Edit Estimate
+                            </DropdownMenuItem>
+                          </Link>
+                          <DropdownMenuItem 
+                            onClick={() => sendEmailMutation.mutate(estimate.id)}
+                            className="font-semibold cursor-pointer"
+                          >
+                            <Mail className="w-4 h-4 mr-2" /> Send Email
+                          </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={() => handleDownload(estimate.id)}
                             className="font-semibold cursor-pointer"

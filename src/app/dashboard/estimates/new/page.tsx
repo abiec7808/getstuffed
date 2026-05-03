@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { InvoiceForm } from '@/components/invoice-form'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Customer } from '@/lib/types'
+import { Customer, Product } from '@/lib/types'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -13,7 +13,7 @@ export default function NewEstimatePage() {
   const supabase = createClient()
   const router = useRouter()
 
-  const { data: customers, isLoading } = useQuery({
+  const { data: customers, isLoading: isCustomersLoading } = useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
       const { data, error } = await supabase.from('customers').select('*').order('name')
@@ -21,6 +21,39 @@ export default function NewEstimatePage() {
       return data as Customer[]
     }
   })
+
+  const { data: products, isLoading: isProductsLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('products').select('*').order('description')
+      if (error) throw error
+      return data as Product[]
+    }
+  })
+
+  const { data: profile, isLoading: isProfileLoading } = useQuery({
+    queryKey: ['profile'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error("No user found")
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      if (error) throw error
+      return data
+    }
+  })
+
+  const { data: countData, isLoading: isCountLoading } = useQuery({
+    queryKey: ['estimates-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase.from('estimates').select('*', { count: 'exact', head: true })
+      if (error) throw error
+      return count || 0
+    }
+  })
+
+  const isLoading = isCustomersLoading || isProductsLoading || isProfileLoading || isCountLoading
+
+  const nextNumber = `EST-GTS${String((countData || 0) + 1).padStart(2, '0')}`
 
   const createMutation = useMutation({
     mutationFn: async (values: any) => {
@@ -33,7 +66,7 @@ export default function NewEstimatePage() {
         .insert({
           user_id: user.id,
           customer_id: values.customer_id,
-          estimate_number: values.estimate_number,
+          estimate_number: values.number,
           status: 'draft',
           tax: (values.items.reduce((acc: number, item: any) => acc + (item.quantity * item.unit_price), 0)) * (values.tax_rate / 100),
           subtotal: values.items.reduce((acc: number, item: any) => acc + (item.quantity * item.unit_price), 0),
@@ -91,15 +124,18 @@ export default function NewEstimatePage() {
         </Button>
         <div>
           <h1 className="text-4xl font-black tracking-tight text-foreground">New Estimate</h1>
-          <p className="text-muted-foreground">Quote your client for a potential project.</p>
+          <p className="text-muted-foreground">Fill in the details to create a professional quote.</p>
         </div>
       </div>
 
       <InvoiceForm 
         type="estimate" 
         customers={customers || []} 
+        products={products || []}
         onSubmit={(values) => createMutation.mutate(values)}
         isSubmitting={createMutation.isPending}
+        defaultTaxRate={profile?.default_tax_rate}
+        nextNumber={nextNumber}
       />
     </div>
   )

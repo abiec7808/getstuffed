@@ -63,6 +63,7 @@ CREATE TABLE public.invoices (
   discount DECIMAL(12,2) DEFAULT 0,
   total DECIMAL(12,2) DEFAULT 0,
   due_date DATE,
+  notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
 );
 

@@ -246,13 +246,13 @@ export default function CustomersPage() {
                 {customers?.map((customer) => (
                   <TableRow key={customer.id} className="group hover:bg-muted/30 transition-colors">
                     <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary font-black text-lg border-2 border-secondary/20 shadow-sm shrink-0">
                           {customer.name.charAt(0).toUpperCase()}
                         </div>
-                        <div>
-                          <p className="font-bold">{customer.name}</p>
-                          <p className="text-xs text-muted-foreground">{customer.contact_person}</p>
+                        <div className="min-w-0">
+                          <p className="font-bold text-base truncate">{customer.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{customer.contact_person}</p>
                         </div>
                       </div>
                     </TableCell>
@@ -304,12 +304,17 @@ export default function CustomersPage() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
-          <div className="bg-primary p-8 text-white">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-black">{editingCustomer ? 'Edit Customer' : 'New Customer'}</DialogTitle>
-              <DialogDescription className="text-primary-foreground/80 font-medium">
-                {editingCustomer ? 'Update the details for this customer.' : 'Enter the details for your new customer.'}
+        <DialogContent className="sm:max-w-[500px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl bg-white">
+          <div className="bg-brand-gradient p-10 text-white relative overflow-hidden">
+            {/* Decorative mesh effect */}
+            <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
+              <div className="absolute -top-20 -left-20 w-40 h-40 bg-white rounded-full blur-3xl"></div>
+              <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-black rounded-full blur-3xl"></div>
+            </div>
+            <DialogHeader className="relative z-10">
+              <DialogTitle className="text-3xl font-black tracking-tight">{editingCustomer ? 'Edit Customer' : 'New Customer'}</DialogTitle>
+              <DialogDescription className="text-white/90 font-bold text-base mt-2">
+                {editingCustomer ? 'Update the profile for your client.' : 'Set up a new client profile in seconds.'}
               </DialogDescription>
             </DialogHeader>
           </div>

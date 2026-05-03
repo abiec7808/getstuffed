@@ -10,7 +10,6 @@ import {
   ClipboardList, 
   Settings, 
   LogOut,
-  ChevronRight,
   ShieldCheck
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -23,20 +22,21 @@ const menuItems = [
   { name: 'Customers', href: '/dashboard/customers', icon: Users },
   { name: 'Invoices', href: '/dashboard/invoices', icon: FileText },
   { name: 'Estimates', href: '/dashboard/estimates', icon: ClipboardList },
+  { name: 'Items', href: '/dashboard/items', icon: ClipboardList },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]
 
-export function Sidebar() {
+export function SidebarContent({ onNavItemClick }: { onNavItemClick?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
 
   const { data: profile } = useQuery({
-    queryKey: ['profile-sidebar'],
+    queryKey: ['profile'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return null
-      const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       return data
     }
   })
@@ -55,16 +55,19 @@ export function Sidebar() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white border-r-2 border-border/50 shadow-sm w-64 fixed left-0 top-0 z-40">
+    <div className="flex flex-col h-full">
       <div className="p-6">
-        <div className="flex items-center gap-3 mb-8 px-2 group">
-          <img 
-            src="/logo.png" 
-            alt="Logo" 
-            className="w-10 h-10 object-contain group-hover:rotate-12 transition-transform" 
-          />
-          <span className="text-xl font-black tracking-tight text-foreground">
-            Get<span className="text-primary">Stuffed</span>
+        <div className="flex items-center gap-3 mb-10 px-2 group">
+          <div className="relative">
+            <div className="absolute inset-0 bg-sidebar-primary blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
+            <img 
+              src={profile?.logo_url || "/logo.png"} 
+              alt="Logo" 
+              className="w-10 h-10 object-contain group-hover:rotate-12 transition-transform relative z-10" 
+            />
+          </div>
+          <span className="text-xl font-black tracking-tight text-sidebar-foreground">
+            Get<span className="text-sidebar-primary">Stuffed</span>
           </span>
         </div>
         
@@ -75,49 +78,63 @@ export function Sidebar() {
               <Link
                 key={item.name}
                 href={item.href}
+                onClick={onNavItemClick}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all group",
+                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all group relative overflow-hidden",
                   isActive 
-                    ? "bg-primary text-white shadow-md shadow-primary/20 scale-[1.02]" 
-                    : "text-muted-foreground hover:bg-primary/5 hover:text-primary"
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/20" 
+                    : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                 )}
               >
-                <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-muted-foreground group-hover:text-primary")} />
+                <item.icon className={cn("w-5 h-5 transition-colors", isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground")} />
                 <span className="flex-1">{item.name}</span>
-                {isActive && <ChevronRight className="w-4 h-4 opacity-70" />}
+                {isActive && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-sidebar-primary-foreground rounded-l-full" />}
               </Link>
             )
           })}
         </nav>
 
         {isAdmin && (
-          <div className="mt-8">
-            <p className="px-4 mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Admin</p>
+          <div className="mt-8 pt-8 border-t border-sidebar-border">
+            <p className="px-4 mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-sidebar-foreground/30">Admin Panel</p>
             <Link
               href="/dashboard/admin/users"
+              onClick={onNavItemClick}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all group",
+                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all group",
                 pathname.startsWith('/dashboard/admin') 
-                  ? "bg-secondary text-white shadow-md shadow-secondary/20 scale-[1.02]" 
-                  : "text-muted-foreground hover:bg-secondary/5 hover:text-secondary"
+                  ? "bg-secondary text-white shadow-lg shadow-secondary/20" 
+                  : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
               )}
             >
-              <ShieldCheck className={cn("w-5 h-5", pathname.startsWith('/dashboard/admin') ? "text-white" : "text-muted-foreground group-hover:text-secondary")} />
-              <span className="flex-1">Users</span>
+              <ShieldCheck className={cn("w-5 h-5", pathname.startsWith('/dashboard/admin') ? "text-white" : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground")} />
+              <span className="flex-1">Manage Users</span>
             </Link>
           </div>
         )}
       </div>
 
-      <div className="mt-auto p-6 border-t border-border/50">
+      <div className="mt-auto p-6 border-t border-sidebar-border bg-sidebar-foreground/[0.02]">
         <button
-          onClick={handleSignOut}
-          className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl text-sm font-semibold text-muted-foreground hover:bg-destructive/5 hover:text-destructive transition-all group"
+          onClick={() => {
+            handleSignOut()
+            onNavItemClick?.()
+          }}
+          className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-bold text-sidebar-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-all group"
         >
-          <LogOut className="w-5 h-5 text-muted-foreground group-hover:text-destructive" />
+          <LogOut className="w-5 h-5 text-sidebar-foreground/40 group-hover:text-destructive transition-colors" />
           <span>Sign Out</span>
         </button>
       </div>
     </div>
   )
 }
+
+export function Sidebar() {
+  return (
+    <div className="hidden md:flex flex-col h-full bg-sidebar border-r border-sidebar-border shadow-2xl w-64 fixed left-0 top-0 z-40 text-sidebar-foreground transition-colors">
+      <SidebarContent />
+    </div>
+  )
+}
+

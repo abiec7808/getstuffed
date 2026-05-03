@@ -27,7 +27,9 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  Send
+  Send,
+  Pencil,
+  Mail
 } from 'lucide-react'
 import { 
   DropdownMenu, 
@@ -56,6 +58,45 @@ export default function InvoicesPage() {
       const { data, error } = await query.order('created_at', { ascending: false })
       if (error) throw error
       return data as (Invoice & { customer: Customer })[]
+    }
+  })
+
+  const sendEmailMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch('/api/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, type: 'invoice' })
+      })
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to send email')
+      }
+      return response.json()
+    },
+    onMutate: () => {
+      toast.loading('Sending email...', { id: 'send-email' })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] })
+      toast.success('Email sent successfully', { id: 'send-email' })
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Error sending email', { id: 'send-email' })
+    }
+  })
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string, status: string }) => {
+      const { error } = await supabase.from('invoices').update({ status }).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] })
+      toast.success('Invoice marked as paid')
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Error updating invoice')
     }
   })
 
@@ -180,6 +221,25 @@ export default function InvoicesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl border-2">
+                          <Link href={`/dashboard/invoices/edit/${invoice.id}`}>
+                            <DropdownMenuItem className="font-semibold cursor-pointer">
+                              <Pencil className="w-4 h-4 mr-2" /> Edit Invoice
+                            </DropdownMenuItem>
+                          </Link>
+                          {invoice.status !== 'paid' && (
+                            <DropdownMenuItem 
+                              onClick={() => updateStatusMutation.mutate({ id: invoice.id, status: 'paid' })}
+                              className="font-semibold cursor-pointer text-green-600 focus:text-green-600 focus:bg-green-50"
+                            >
+                              <CheckCircle2 className="w-4 h-4 mr-2" /> Mark as Paid
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem 
+                            onClick={() => sendEmailMutation.mutate(invoice.id)}
+                            className="font-semibold cursor-pointer"
+                          >
+                            <Mail className="w-4 h-4 mr-2" /> Send Email
+                          </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={() => handleDownload(invoice.id)}
                             className="font-semibold cursor-pointer"

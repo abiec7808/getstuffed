@@ -3,15 +3,30 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase'
 import { InvoiceForm } from '@/components/invoice-form'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { Customer, Product } from '@/lib/types'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export default function NewInvoicePage() {
+export default function EditInvoicePage() {
   const supabase = createClient()
   const router = useRouter()
+  const params = useParams()
+  const id = params.id as string
+
+  const { data: invoice, isLoading: isInvoiceLoading } = useQuery({
+    queryKey: ['invoice', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*, items:invoice_items(*)')
+        .eq('id', id)
+        .single()
+      if (error) throw error
+      return data
+    }
+  })
 
   const { data: customers, isLoading: isCustomersLoading } = useQuery({
     queryKey: ['customers'],
@@ -31,58 +46,38 @@ export default function NewInvoicePage() {
     }
   })
 
-  const { data: profile, isLoading: isProfileLoading } = useQuery({
-    queryKey: ['profile'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error("No user found")
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      if (error) throw error
-      return data
-    }
-  })
+  const isLoading = isInvoiceLoading || isCustomersLoading || isProductsLoading
 
-  const { data: countData, isLoading: isCountLoading } = useQuery({
-    queryKey: ['invoices-count'],
-    queryFn: async () => {
-      const { count, error } = await supabase.from('invoices').select('*', { count: 'exact', head: true })
-      if (error) throw error
-      return count || 0
-    }
-  })
-
-  const isLoading = isCustomersLoading || isProductsLoading || isProfileLoading || isCountLoading
-
-  const nextNumber = `INV-GTS${String((countData || 0) + 1).padStart(2, '0')}`
-
-  const createMutation = useMutation({
+  const updateMutation = useMutation({
     mutationFn: async (values: any) => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error("No user found")
-
-      // 1. Create Invoice
-      const { data: invoice, error: invoiceError } = await supabase
+      // 1. Update Invoice
+      const { error: invoiceError } = await supabase
         .from('invoices')
-        .insert({
-          user_id: user.id,
+        .update({
           customer_id: values.customer_id,
           invoice_number: values.number,
           due_date: values.due_date,
-          status: 'draft',
           tax: (values.items.reduce((acc: number, item: any) => acc + (item.quantity * item.unit_price), 0)) * (values.tax_rate / 100),
           subtotal: values.items.reduce((acc: number, item: any) => acc + (item.quantity * item.unit_price), 0),
           discount: values.discount,
           total: (values.items.reduce((acc: number, item: any) => acc + (item.quantity * item.unit_price), 0)) * (1 + values.tax_rate / 100) - values.discount,
           notes: values.notes,
         })
-        .select()
-        .single()
+        .eq('id', id)
 
       if (invoiceError) throw invoiceError
 
-      // 2. Create Invoice Items
+      // 2. Delete existing items
+      const { error: deleteError } = await supabase
+        .from('invoice_items')
+        .delete()
+        .eq('invoice_id', id)
+      
+      if (deleteError) throw deleteError
+
+      // 3. Insert new items
       const invoiceItems = values.items.map((item: any) => ({
-        invoice_id: invoice.id,
+        invoice_id: id,
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unit_price,
@@ -92,15 +87,15 @@ export default function NewInvoicePage() {
       const { error: itemsError } = await supabase.from('invoice_items').insert(invoiceItems)
       if (itemsError) throw itemsError
 
-      return invoice
+      return true
     },
     onSuccess: () => {
-      toast.success('Invoice created successfully')
+      toast.success('Invoice updated successfully')
       router.push('/dashboard/invoices')
       router.refresh()
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Error creating invoice')
+      toast.error(error.message || 'Error updating invoice')
     }
   })
 
@@ -124,8 +119,8 @@ export default function NewInvoicePage() {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-foreground">New Invoice</h1>
-          <p className="text-muted-foreground">Fill in the details to create a professional invoice.</p>
+          <h1 className="text-4xl font-black tracking-tight text-foreground">Edit Invoice</h1>
+          <p className="text-muted-foreground">Update the details for this invoice.</p>
         </div>
       </div>
 
@@ -133,10 +128,9 @@ export default function NewInvoicePage() {
         type="invoice" 
         customers={customers || []} 
         products={products || []}
-        onSubmit={(values) => createMutation.mutate(values)}
-        isSubmitting={createMutation.isPending}
-        defaultTaxRate={profile?.default_tax_rate}
-        nextNumber={nextNumber}
+        initialData={invoice}
+        onSubmit={(values) => updateMutation.mutate(values)}
+        isSubmitting={updateMutation.isPending}
       />
     </div>
   )
