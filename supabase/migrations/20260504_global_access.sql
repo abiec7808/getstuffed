@@ -31,3 +31,7 @@ CREATE POLICY "Authenticated users can access all invoice items" ON public.invoi
 -- 7. Payments
 DROP POLICY IF EXISTS "Users can access own payments" ON public.payments;
 CREATE POLICY "Authenticated users can access all payments" ON public.payments FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- 8. Products
+DROP POLICY IF EXISTS "Users can access own products" ON public.products;
+CREATE POLICY "Authenticated users can access all products" ON public.products FOR ALL TO authenticated USING (true) WITH CHECK (true);
