@@ -197,6 +197,13 @@ export async function generateInvoicePDF(data: any, customer: Customer, profile:
     billToY -= toAddrHeight + 5
   }
   page.drawText(customer.email || '', { x: rightColX, y: billToY, size: 9, font: font, color: secondaryTextColor })
+  billToY -= 13
+
+  if (customer.registration_number) {
+    const regText = `Reg No: ${customer.registration_number}`
+    page.drawText(regText, { x: rightColX, y: billToY, size: 9, font: font, color: secondaryTextColor })
+    billToY -= 13
+  }
 
   // Dates Bar
   currentY = Math.min(currentY, billToY) - 45

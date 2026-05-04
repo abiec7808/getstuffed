@@ -60,6 +60,7 @@ const customerSchema = z.object({
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   phone: z.string().optional(),
   address: z.string().optional(),
+  registration_number: z.string().optional(),
   notes: z.string().optional(),
 })
 
@@ -93,6 +94,7 @@ export default function CustomersPage() {
       email: "",
       phone: "",
       address: "",
+      registration_number: "",
       notes: "",
     },
   })
@@ -172,6 +174,7 @@ export default function CustomersPage() {
       email: customer.email || "",
       phone: customer.phone || "",
       address: customer.address || "",
+      registration_number: customer.registration_number || "",
       notes: customer.notes || "",
     })
     setIsDialogOpen(true)
@@ -193,6 +196,7 @@ export default function CustomersPage() {
               email: "",
               phone: "",
               address: "",
+              registration_number: "",
               notes: "",
             })
             setIsDialogOpen(true)
@@ -253,6 +257,9 @@ export default function CustomersPage() {
                         <div className="min-w-0">
                           <p className="font-bold text-base truncate">{customer.name}</p>
                           <p className="text-xs text-muted-foreground truncate">{customer.contact_person}</p>
+                          {customer.registration_number && (
+                            <p className="text-[10px] text-muted-foreground/60 truncate uppercase tracking-wider font-bold">Reg: {customer.registration_number}</p>
+                          )}
                         </div>
                       </div>
                     </TableCell>
@@ -381,6 +388,19 @@ export default function CustomersPage() {
                       <FormLabel className="font-bold">Address</FormLabel>
                       <FormControl>
                         <Input placeholder="123 Main St, City, Country" {...field} className="rounded-xl border-2 h-11 focus-visible:ring-primary" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="registration_number"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel className="font-bold">Company Registration Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="2024/123456/07" {...field} className="rounded-xl border-2 h-11 focus-visible:ring-primary" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
