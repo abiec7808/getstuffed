@@ -61,6 +61,7 @@ const customerSchema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   registration_number: z.string().optional(),
+  vat_number: z.string().optional(),
   notes: z.string().optional(),
 })
 
@@ -95,6 +96,7 @@ export default function CustomersPage() {
       phone: "",
       address: "",
       registration_number: "",
+      vat_number: "",
       notes: "",
     },
   })
@@ -175,6 +177,7 @@ export default function CustomersPage() {
       phone: customer.phone || "",
       address: customer.address || "",
       registration_number: customer.registration_number || "",
+      vat_number: customer.vat_number || "",
       notes: customer.notes || "",
     })
     setIsDialogOpen(true)
@@ -197,6 +200,7 @@ export default function CustomersPage() {
               phone: "",
               address: "",
               registration_number: "",
+              vat_number: "",
               notes: "",
             })
             setIsDialogOpen(true)
@@ -259,6 +263,9 @@ export default function CustomersPage() {
                           <p className="text-xs text-muted-foreground truncate">{customer.contact_person}</p>
                           {customer.registration_number && (
                             <p className="text-[10px] text-muted-foreground/60 truncate uppercase tracking-wider font-bold">Reg: {customer.registration_number}</p>
+                          )}
+                          {customer.vat_number && (
+                            <p className="text-[10px] text-muted-foreground/60 truncate uppercase tracking-wider font-bold">VAT: {customer.vat_number}</p>
                           )}
                         </div>
                       </div>
@@ -401,6 +408,19 @@ export default function CustomersPage() {
                       <FormLabel className="font-bold">Company Registration Number</FormLabel>
                       <FormControl>
                         <Input placeholder="2024/123456/07" {...field} className="rounded-xl border-2 h-11 focus-visible:ring-primary" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="vat_number"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel className="font-bold">VAT Registration Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="4123456789" {...field} className="rounded-xl border-2 h-11 focus-visible:ring-primary" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

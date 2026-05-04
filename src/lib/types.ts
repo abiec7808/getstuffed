@@ -35,6 +35,7 @@ export type Customer = {
   phone: string | null
   address: string | null
   registration_number: string | null
+  vat_number: string | null
   notes: string | null
   created_at: string
 }

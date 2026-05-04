@@ -205,6 +205,12 @@ export async function generateInvoicePDF(data: any, customer: Customer, profile:
     billToY -= 13
   }
 
+  if (customer.vat_number) {
+    const vatText = `VAT No: ${customer.vat_number}`
+    page.drawText(vatText, { x: rightColX, y: billToY, size: 9, font: font, color: secondaryTextColor })
+    billToY -= 13
+  }
+
   // Dates Bar
   currentY = Math.min(currentY, billToY) - 45
   page.drawRectangle({
