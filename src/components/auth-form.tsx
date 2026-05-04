@@ -54,7 +54,12 @@ export function AuthForm({ type }: { type: 'login' | 'signup' }) {
         }
       }
     } catch (error: any) {
-      toast.error(error.message || 'An error occurred during authentication')
+      console.error('Authentication error:', error)
+      if (error.message === 'Failed to fetch') {
+        toast.error('Network error: Could not connect to Supabase. Please check your internet connection or environment variables.')
+      } else {
+        toast.error(error.message || 'An error occurred during authentication')
+      }
     } finally {
       setLoading(false)
     }

@@ -2,7 +2,7 @@ import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib'
 import { Customer, Profile } from './types'
 import { format } from 'date-fns'
 
-export async function generateInvoicePDF(data: any, customer: Customer, profile: Profile) {
+export async function generateInvoicePDF(data: any, customer: Customer, profile: Profile, baseUrl?: string) {
   const pdfDoc = await PDFDocument.create()
   const page = pdfDoc.addPage([595.28, 841.89]) // A4 size
   const { width, height } = page.getSize()
@@ -37,33 +37,59 @@ export async function generateInvoicePDF(data: any, customer: Customer, profile:
   // Logo & Title
   const businessTitle = profile.business_name?.toUpperCase() || 'GET STUFFED COOKIES'
   
-  if (profile.logo_url) {
+  const logoToFetch = profile.logo_url || (baseUrl ? `${baseUrl}/logo.png` : null)
+
+  if (logoToFetch) {
     try {
-      const logoResponse = await fetch(profile.logo_url)
-      const logoBytes = await logoResponse.arrayBuffer()
-      const isPng = profile.logo_url.toLowerCase().endsWith('.png')
-      const logoImage = isPng ? await pdfDoc.embedPng(logoBytes) : await pdfDoc.embedJpg(logoBytes)
-      
-      const scale = 80 / logoImage.height
-      const logoWidth = logoImage.width * scale
-      page.drawImage(logoImage, {
-        x: 40,
-        y: height - 120,
-        width: logoWidth,
-        height: 80,
-      })
+      const logoResponse = await fetch(logoToFetch)
+      if (logoResponse.ok) {
+        const logoBytes = await logoResponse.arrayBuffer()
+        const contentType = logoResponse.headers.get('Content-Type')
+        
+        let logoImage
+        // Try to determine format from content-type or URL
+        if (contentType === 'image/png' || logoToFetch.toLowerCase().includes('.png')) {
+          logoImage = await pdfDoc.embedPng(logoBytes)
+        } else if (contentType === 'image/jpeg' || contentType === 'image/jpg' || logoToFetch.toLowerCase().includes('.jpg') || logoToFetch.toLowerCase().includes('.jpeg')) {
+          logoImage = await pdfDoc.embedJpg(logoBytes)
+        } else {
+          // Fallback: try PNG then JPG
+          try {
+            logoImage = await pdfDoc.embedPng(logoBytes)
+          } catch {
+            logoImage = await pdfDoc.embedJpg(logoBytes)
+          }
+        }
+
+        if (logoImage) {
+          const maxHeight = 80
+          const maxWidth = 200
+          const scale = Math.min(maxHeight / logoImage.height, maxWidth / logoImage.width)
+          const logoWidth = logoImage.width * scale
+          const logoHeight = logoImage.height * scale
+          
+          page.drawImage(logoImage, {
+            x: 40,
+            y: height - 120 + (maxHeight - logoHeight) / 2,
+            width: logoWidth,
+            height: logoHeight,
+          })
+        }
+      }
     } catch (e) {
       console.error('Failed to embed logo:', e)
     }
   }
 
-  // Business Name in Header
+  // Business Name in Header (only if it doesn't overlap or as a fallback)
   page.drawText(businessTitle, {
     x: 40,
     y: height - 145,
     size: 20,
     font: fontBold,
     color: rgb(1, 1, 1),
+    maxWidth: 250,
+    lineHeight: 22
   })
 
   // Document Title & Info
@@ -118,11 +144,23 @@ export async function generateInvoicePDF(data: any, customer: Customer, profile:
 
   page.drawText('FROM', { x: leftColX, y: currentY, size: 8, font: fontBold, color: primaryColor })
   currentY -= 18
-  page.drawText(profile.business_name || 'Get Stuffed Cookies', { x: leftColX, y: currentY, size: 12, font: fontBold, color: textColor })
-  currentY -= 15
+  const fromName = profile.business_name || 'Get Stuffed Cookies'
+  page.drawText(fromName, { 
+    x: leftColX, 
+    y: currentY, 
+    size: 12, 
+    font: fontBold, 
+    color: textColor,
+    maxWidth: 200,
+    lineHeight: 14
+  })
+  const fromNameHeight = Math.ceil(fontBold.widthOfTextAtSize(fromName, 12) / 200) * 14
+  currentY -= fromNameHeight + 2
+
   if (profile.business_address) {
     page.drawText(profile.business_address, { x: leftColX, y: currentY, size: 9, font: font, color: secondaryTextColor, maxWidth: 200, lineHeight: 11 })
-    currentY -= 25
+    const fromAddrHeight = Math.ceil(font.widthOfTextAtSize(profile.business_address, 9) / 200) * 11
+    currentY -= fromAddrHeight + 5
   }
   page.drawText(profile.business_email || '', { x: leftColX, y: currentY, size: 9, font: font, color: secondaryTextColor })
   currentY -= 13
@@ -132,8 +170,19 @@ export async function generateInvoicePDF(data: any, customer: Customer, profile:
   let billToY = height - 210
   page.drawText('BILL TO', { x: rightColX, y: billToY, size: 8, font: fontBold, color: primaryColor })
   billToY -= 18
-  page.drawText(customer.name, { x: rightColX, y: billToY, size: 12, font: fontBold, color: textColor })
-  billToY -= 15
+  const toName = customer.name || 'N/A'
+  page.drawText(toName, { 
+    x: rightColX, 
+    y: billToY, 
+    size: 12, 
+    font: fontBold, 
+    color: textColor,
+    maxWidth: 200,
+    lineHeight: 14
+  })
+  const toNameHeight = Math.ceil(fontBold.widthOfTextAtSize(toName, 12) / 200) * 14
+  billToY -= toNameHeight + 2
+
   if (customer.address) {
     page.drawText(customer.address, { 
       x: rightColX, 
@@ -144,7 +193,8 @@ export async function generateInvoicePDF(data: any, customer: Customer, profile:
       maxWidth: 200,
       lineHeight: 11
     })
-    billToY -= 25
+    const toAddrHeight = Math.ceil(font.widthOfTextAtSize(customer.address, 9) / 200) * 11
+    billToY -= toAddrHeight + 5
   }
   page.drawText(customer.email || '', { x: rightColX, y: billToY, size: 9, font: font, color: secondaryTextColor })
 

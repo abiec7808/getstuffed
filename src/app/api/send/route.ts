@@ -55,7 +55,8 @@ export async function POST(request: Request) {
       document.invoice_items = document.estimate_items
     }
 
-    const pdfBytes = await generateInvoicePDF(document, document.customer, profile)
+    const origin = new URL(request.url).origin
+    const pdfBytes = await generateInvoicePDF(document, document.customer, profile, origin)
     
     // Convert Uint8Array to Buffer for Resend
     const pdfBuffer = Buffer.from(pdfBytes)
